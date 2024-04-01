@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet,Image } from 'react-native';
+import QLearningAgent from './agents/QLearningAgent'
+import QLearningDisplay from './components/QLearningDisplay';
+import { View, Text, TouchableOpacity, StyleSheet,Image,ScrollView } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 
 export default function App() {
   const [qLearning, setQLearning] = useState(false);
+  const [titleText,setTitleText]=useState("Press button to load algorithm!");
   const [turn, setTurn] = useState('X');
   const [transition,setTransition]=useState(false);
   const [board, setBoard] = useState(Array(9).fill(""));
+  const [qAgent,setQAgent]=useState(new QLearningAgent())
 
   useEffect(() => {
     console.log("qLearning selected!")
-  }, [qLearning]);
+  }, [qLearning,titleText]);
 
   useEffect(() => {
     console.log("Board changed!");
@@ -18,8 +22,12 @@ export default function App() {
   }, [board]);
 
   const animateRipple = (ref) => {
-    if (ref && transition) { 
-      ref.rubberBand(1000); 
+    if (ref && transition) {
+      ref.rubberBand(1000).then((endState) => {
+        if (endState.finished) {
+          setTransition(false);
+        }
+      });
     }
   };
 
@@ -55,22 +63,31 @@ export default function App() {
 
 
   return (
+    <ScrollView style={styles.scrollRoot}>
     <View style={styles.root}>
       <View style={styles.titleContainer}>
         <Text style={styles.titleText}>REINFORCE!</Text>
+        <Text style={styles.subTitleText}>{titleText}</Text>
       </View>
       <View style={styles.buttonMenu}>
         <TouchableOpacity style={styles.button} onPress={() => { setTransition(true)
          setQLearning(!qLearning)
-         setTransition(false)
+         if(!qLearning){
+          setTitleText("Q learning loaded!")
+          qAgent.attach();
+        }else{
+          setTitleText("Press button to load algorithm!")
+          qAgent.detach();
+        }
+         
         setBoard(Array(9).fill("")) }}>
           <Text style={styles.buttonText}>QLearning</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>None</Text>
+          <Text style={styles.buttonText}>SARSA</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>None</Text>
+          <Text style={styles.buttonText}>DQN</Text>
         </TouchableOpacity>
       </View>
       <Animatable.View style={[styles.containerX0, qLearning ? styles.qLearningContainer : null]}>
@@ -94,15 +111,23 @@ export default function App() {
           </Animatable.View>
         ))}
       </Animatable.View>
+      <View>
+        <QLearningDisplay QLearningAgent={qAgent}></QLearningDisplay>
+      </View>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollRoot:{
+     
+  },
   root: {
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
+    height:700,
     justifyContent: 'flex-start',
   },
   titleContainer: {
@@ -111,10 +136,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
+    marginTop:'5%'
   },
   titleText: {
     fontWeight: 'bold',
     fontSize: 20,
+  },
+  subTitleText:{
+    marginTop:5,
+    color:'gray',
+    fontWeight:'300'
   },
   buttonMenu: {
     height: '12.5%',
@@ -128,7 +159,7 @@ const styles = StyleSheet.create({
     height: '33.33%',
     borderRadius: 8,
     marginHorizontal: 16,
-    flexGrow: 1,
+    width:'25%',
     alignItems: 'center',
     justifyContent: 'center',
   },
