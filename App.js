@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QLearningAgent from './agents/QLearningAgent'
 import QLearningDisplay from './components/QLearningDisplay';
-import { View, Text, TouchableOpacity, StyleSheet,Image,ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet,Image,ScrollView,SafeAreaView } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 
 export default function App() {
@@ -10,16 +10,30 @@ export default function App() {
   const [turn, setTurn] = useState('X');
   const [transition,setTransition]=useState(false);
   const [board, setBoard] = useState(Array(9).fill(""));
-  const [qAgent,setQAgent]=useState(new QLearningAgent())
+  const [qAgent,setQAgent]=useState(new QLearningAgent());
 
   useEffect(() => {
-    console.log("qLearning selected!")
+    
   }, [qLearning,titleText]);
+  useEffect(()=>{
+  },[board])
+  useEffect(()=>{
+    if(turn==='O'){
+      const newBoard = [...board];
+      boxIndex=qAgent.getPolicy(board);
+      newBoard[boxIndex-1]=turn;
+      agentReward=checkWinner(newBoard);
+      qAgent.updatePolicy(agentReward,newBoard);
+      if(agentReward==-0.15){
+        setBoard(newBoard);
+      }else{
+        setBoard(Array(9).fill(""));
+      }
+      
+      setTurn('X')
 
-  useEffect(() => {
-    console.log("Board changed!");
-    checkWinner();
-  }, [board]);
+    }
+  },[turn])
 
   const animateRipple = (ref) => {
     if (ref && transition) {
@@ -32,33 +46,40 @@ export default function App() {
   };
 
   const handleBoxPress = (boxIndex) => {
-    console.log(`Box ${boxIndex + 1} pressed`);
-    if (board[boxIndex] != "") return; 
-
-    const newBoard = [...board];
-    newBoard[boxIndex] = turn;
-    setBoard(newBoard);
-    setTurn(turn === 'X' ? 'O' : 'X');
+    if (board[boxIndex] != ""){
+        console.log("Unlawful box press!");
+        return;
+    }  
+    if(turn==='X'){
+      const newBoard = [...board];
+      newBoard[boxIndex] = turn;
+      setBoard(newBoard);
+      setTurn('O')
+    }else{
+      console.log("User tried pressing during agent turn!")
+    }
+    
   };
 
-  const checkWinner = () => {
+  const checkWinner = (boardConfig) => {
     
     const winningCombos = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], 
       [0, 3, 6], [1, 4, 7], [2, 5, 8], 
       [0, 4, 8], [2, 4, 6] 
     ];
-
+    let agentReward=-0.15;
     for (let combo of winningCombos) {
       const [a, b, c] = combo;
-      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-     
-        console.log(`${board[a]} Wins!`)
-        setBoard(Array(9).fill(""))
-        
+      if (boardConfig[a] && boardConfig[a] === boardConfig[b] && boardConfig[a] === boardConfig[c]) {
+         
+        console.log(`${boardConfig[a]} Wins!`)
+        if(boardConfig[a]==="X")agentReward=-1;
+        if(boardConfig[a]==="O")agentReward=1;
         break;
       }
     }
+    return agentReward;
   };
 
 
@@ -111,23 +132,31 @@ export default function App() {
           </Animatable.View>
         ))}
       </Animatable.View>
-      <View>
+      
+    </View>
+    <View style={styles.dashboardView}>
         <QLearningDisplay QLearningAgent={qAgent}></QLearningDisplay>
-      </View>
     </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollRoot:{
-     
+  dashboardView:{
+    justifyContent:'center',
+    alignItems:'center',
+    marginBottom:35,
+    backgroundColor:'red',
+    minHeight:500
+  },
+  scrollRoot: {
+    flex:1,
   },
   root: {
     flex: 1,
-    backgroundColor: '#fff',
+    marginTop:35,
     alignItems: 'center',
-    height:700,
+    height:557,
     justifyContent: 'flex-start',
   },
   titleContainer: {
@@ -175,6 +204,7 @@ const styles = StyleSheet.create({
   },
   containerX0: {
     width: '90%',
+    minHeight:300,
     height: '50%',
     backgroundColor: 'lightgray',
     flexDirection: 'row',
