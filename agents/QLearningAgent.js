@@ -1,14 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 class QLearningAgent{
 
     constructor(){
         this.test=0;
         this.qValues={};
         this.isAttached=false;
-        
         this.subscribers=[];
         this.epsilon=0.5;
         this.lastState=null;
+        this.lastReward=null;
+        this.lastActionSampleType=null;
         this.lr=0.1;
         this.df=0.3;
         this.lastAction=null;
@@ -19,21 +19,10 @@ class QLearningAgent{
     setTest(test){
         this.test=test;
     }
-    async attach(){
-        try {
-            const qValues = await AsyncStorage.getItem('qValues');
-            if (qValues !== null) {
-              this.qValues = JSON.parse(qValues);
-              this.isAttached=true;
-            }else{
-              await AsyncStorage.setItem('qValues',JSON.stringify(this.qValues))  
-            }
-          } catch (error) {
-            console.error('Error retrieving data from AsyncStorage:', error);
-          }
+    attach(){
+       this.isAttached=true;
     } 
     detach(){
-        console.log("Agent now detached!");
         this.isAttached=false;
     }
     getIsAttached(){
@@ -76,8 +65,10 @@ class QLearningAgent{
                 if (Math.random() < this.epsilon) {
                    
                     key = this.getArgMax(state);
+                    this.lastActionSampleType='greedy';
                 } else {
                     key = this.sampleRandom(state);
+                    this.lastActionSampleType='epsilon';
                 }
             } else {
                 const emptyIndexes = state.reduce((acc, val, index) => {
@@ -86,7 +77,7 @@ class QLearningAgent{
                     }
                     return acc;
                 }, []);
-                
+                this.lastActionSampleType='epsilon new state';
                 const initialStateValues = emptyIndexes.map(index => ({ [index]: 0 }));
                 this.qValues[state] = Object.assign({}, ...initialStateValues);
                 key = this.sampleRandom(state);
@@ -107,6 +98,7 @@ class QLearningAgent{
         console.log("transitioned to "+new_state);
         console.log("by performing action "+this.lastAction);
         console.log("got reward "+reward);
+        this.lastReward=reward;
         if(this.lastAction && this.lastState){
            let argmax_next=0;
            if(this.qValues.hasOwnProperty(new_state)){
