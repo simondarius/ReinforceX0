@@ -1,6 +1,5 @@
 # ReinforceX0
 
-## React Native RL Agent Visualizer
 
 This project is a React Native Expo application designed to visualize, train, test, and deploy reinforcement learning (RL) agents using a user-friendly interface. The current implementation provides a simple X-O game environment with a Q-learning agent. Users can modify parameters, visualize the Q-matrix and other parameters, train agents, and play against them. In the future, the application aims to support various types of agents for different environments.
 
@@ -88,4 +87,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
-For any inquiries or feedback, please contact [projectmaintainer@example.com](mailto:projectmaintainer@example.com).
+For any inquiries or feedback, please contact [simondarius0@gmail.com](mailto:simondarius0@gmail.com).
